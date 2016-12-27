@@ -1,6 +1,13 @@
 [package]
 name = "awesomefireduck-dactyl-firmware"
 version = "0.1.0"
-authors = ["Vince van Oosten <vvanoosten@computest.nl>"]
+build = "build.rs"
 
-[dependencies]
+[profile.dev]
+panic = "abort"
+
+[profile.release]
+panic = "abort"
+
+[target.thumbv7em-none-eabi.dependencies.rust-libcore]
+git = "https://github.com/hackndev/rust-libcore"
