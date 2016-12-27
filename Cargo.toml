@@ -1,0 +1,6 @@
+[package]
+name = "awesomefireduck-dactyl-firmware"
+version = "0.1.0"
+authors = ["Vince van Oosten <vvanoosten@computest.nl>"]
+
+[dependencies]
