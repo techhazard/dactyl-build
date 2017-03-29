@@ -1,0 +1,3 @@
+[submodule "tools/teensy3_qemu"]
+	path = tools/teensy3_qemu
+	url = https://github.com/ve3wwg/teensy3_qemu.git
