@@ -1,18 +1,24 @@
-#![feature(lang_items,core_intrinsics,asm,start)]
+#![feature(lang_items,core_intrinsics,asm,start,use_extern_macros)]
 #![no_std]
 #![crate_type="staticlib"]
 
 use core::intrinsics::volatile_store;
 
-#[lang="eh_personality"]
-extern "C" fn eh_personality() {}
-#[lang="panic_fmt"]
-#[no_mangle]
-pub extern "C" fn rust_begin_unwind(_fmt: &core::fmt::Arguments,
-                                    _file_line: &(&'static str, usize))
-                                    -> ! {
-    loop {}
-}
+
+
+extern crate awesomefireduck_dactyl_firmware;
+use awesomefireduck_dactyl_firmware as a;
+
+
+//#[lang="eh_personality"]
+//extern "C" fn eh_personality() {}
+// #[lang="panic_fmt"]
+// #[no_mangle]
+// pub extern "C" fn rust_begin_unwind(_fmt: &core::fmt::Arguments,
+//                                     _file_line: &(&'static str, usize))
+//                                     -> ! {
+//     loop {}
+// }
 
 #[no_mangle]
 pub extern "C" fn __aeabi_unwind_cpp_pr0() -> () {
@@ -24,13 +30,6 @@ pub extern "C" fn __aeabi_unwind_cpp_pr1() -> () {
     loop {}
 }
 
-macro_rules! GPIOC_PDOR   {() => (0x400FF080 as *mut u32);} // GPIOC_PDOR - page 1334,1335
-macro_rules! WDOG_UNLOCK  {() => (0x4005200E as *mut u16);} // Watchdog Unlock register
-macro_rules! WDOG_STCTRLH {() => (0x40052000 as *mut u16);} // Watchdog Status and Control Register High
-macro_rules! GPIO_CONFIG  {() => (0x40048038 as *mut u32);}
-macro_rules! PORTC_PCR5   {() => (0x4004B014 as *mut u32);} // PORTC_PCR5 - page 223/227
-macro_rules! GPIOC_PDDR   {() => (0x400FF094 as *mut u32);} // GPIOC_PDDR - page 1334,1337
-macro_rules! GPIOC_PDOR   {() => (0x400FF080 as *mut u32);} // GPIOC_PDOR - page 1334,1335
 
 extern "C" {
     static mut _sflashdata: u32;
@@ -70,9 +69,9 @@ pub unsafe extern "C" fn startup() {
     let mut src: *mut u32 = &mut _sflashdata;
     let mut dest: *mut u32 = &mut _sdata;
 
-    volatile_store(WDOG_UNLOCK!(), 0xC520);
-    volatile_store(WDOG_UNLOCK!(), 0xD928);
-    volatile_store(WDOG_STCTRLH!(), 0x01D2);
+    volatile_store(a::WDOG_UNLOCK!(), 0xC520);
+    volatile_store(a::WDOG_UNLOCK!(), 0xD928);
+    volatile_store(a::WDOG_STCTRLH!(), 0x01D2);
 
     while dest < &mut _edata as *mut u32 {
         *dest = *src;
@@ -82,47 +81,28 @@ pub unsafe extern "C" fn startup() {
 
     dest = &mut _sbss as *mut u32;
 
-    while dest < &mut _edata as *mut u32 {
+   while dest < &mut _edata as *mut u32 {
         *dest = 0;
         dest = ((dest as u32) + 4) as *mut u32;
     }
 
     // Enable system clock on all GPIO ports - page 254
-    *GPIO_CONFIG!() = 0x00043F82; // 0b1000011111110000010
+    *a::GPIO_CONFIG!() = 0x00043F82; // 0b1000011111110000010
     // Configure the led pin
-    *PORTC_PCR5!() = 0x00000143; // Enables GPIO | DSE | PULL_ENABLE | PULL_SELECT - page 227
+    *a::PORTC_PCR5!() = 0x00000143; // Enables GPIO | DSE | PULL_ENABLE | PULL_SELECT - page 227
     // Set the led pin to output
-    *GPIOC_PDDR!() = 0x20; // pin 5 on port c
+    *a::GPIOC_PDDR!() = 0x20; // pin 5 on port c
 
     rust_loop();
 }
 
-pub fn led_on() {
-    unsafe {
-        volatile_store(GPIOC_PDOR!(), 0x20);
-    }
-}
 
-pub fn led_off() {
-    unsafe {
-        volatile_store(GPIOC_PDOR!(), 0x0);
-    }
-}
-
-pub fn delay(ms: i32) {
-    for _ in 0..ms * 250 {
-        unsafe {
-            asm!("NOP");
-        }
-    }
-}
-
-pub fn rust_loop() {
+fn rust_loop() {
     loop {
-        led_on();
-        delay(1000);
-        led_off();
-        delay(1000);
+        a::led_on();
+        a::delay(1000);
+        a::led_off();
+        a::delay(1000);
     }
 }
 
