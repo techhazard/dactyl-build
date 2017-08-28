@@ -46,8 +46,9 @@ pub enum Key {
     Enter,
     Return,
     Backspace,
-    Rightmousethingy,
+    Menu, //rightmousethingy
     Function,
+    Modifier,
     Layer(u32),
 }
 
@@ -71,13 +72,50 @@ pub struct KeyCombo {
     modifiers: Vec<Modifier>,/* one of: shift ctrl alt altgr super meta hyper*/
 }
 
-pub fn parse_key() -> KeyCombo {
+/// Designates the position in the keygrid.
+/// A grid can be at most 256 keys wide
+/// and 256 keys tall
+/// grid_id is the id of the grid the key is in,
+/// e.g. 0 for alphanum, 1 for numpad
+pub struct KeyPosition {
+    column: u8,
+    row: u8,
+    grid_id: u8,
+}
+
+pub fn find_keys() -> Option<Vec<KeyPosition>> {
+    let keys : Vec<KeyPosition> = Vec::new();
+    loop {
+        // loop over grids
+        // loop over keys in a grid like this
+        // https://en.wikipedia.org/wiki/Computer_keyboard#/media/File:FunctionalCircuitDiagramOfKeyboardNumPadScanningProcedure-small.gif
+        break;
+    }
+    None
+}
+
+pub fn handle_keypress(keys: Vec<KeyCombo>) -> KeyCombo {
     // get position(s) in grid that are passed
     // map each postition to a keypress
     // return KeyCombo
     unimplemented!();
 }
 
+fn detect_keypress() -> Option<Vec<KeyCombo>> {
+    let keys : Vec<KeyCombo>;
+    if let Some(keypositions) = find_keys() {
+        keypositions.iter().map(|&pos| map_position_to_key(pos)).collect()
+    } else {
+        None
+    }
+}
+pub fn run() -> ! {
+    loop {
+        if let Some(keycombo) = detect_keypress() {
+            handle_keypress(keycombo);
+        }
+    }
+}
 
 
 #[cfg(test)]
@@ -87,4 +125,6 @@ mod tests {
     }
 }
 
-
+/// the dactyl has four grids of keys
+/// on each side the dactyl has one grid for the alphanumerics
+/// and one grid for the thumb keys.
