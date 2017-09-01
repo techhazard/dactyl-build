@@ -4,10 +4,8 @@
 
 use core::intrinsics::volatile_store;
 
-
-
-extern crate awesomefireduck_dactyl_firmware;
-use awesomefireduck_dactyl_firmware as a;
+extern crate dactyl_firmware;
+use dactyl_firmware as firmware;
 
 
 //#[lang="eh_personality"]
@@ -69,9 +67,9 @@ pub unsafe extern "C" fn startup() {
     let mut src: *mut u32 = &mut _sflashdata;
     let mut dest: *mut u32 = &mut _sdata;
 
-    volatile_store(a::WDOG_UNLOCK!(), 0xC520);
-    volatile_store(a::WDOG_UNLOCK!(), 0xD928);
-    volatile_store(a::WDOG_STCTRLH!(), 0x01D2);
+    volatile_store(firmware::WDOG_UNLOCK!(), 0xC520);
+    volatile_store(firmware::WDOG_UNLOCK!(), 0xD928);
+    volatile_store(firmware::WDOG_STCTRLH!(), 0x01D2);
 
     while dest < &mut _edata as *mut u32 {
         *dest = *src;
@@ -87,11 +85,11 @@ pub unsafe extern "C" fn startup() {
     }
 
     // Enable system clock on all GPIO ports - page 254
-    *a::GPIO_CONFIG!() = 0x00043F82; // 0b1000011111110000010
+    *firmware::GPIO_CONFIG!() = 0x00043F82; // 0b1000011111110000010
     // Configure the led pin
-    *a::PORTC_PCR5!() = 0x00000143; // Enables GPIO | DSE | PULL_ENABLE | PULL_SELECT - page 227
+    *firmware::PORTC_PCR5!() = 0x00000143; // Enables GPIO | DSE | PULL_ENABLE | PULL_SELECT - page 227
     // Set the led pin to output
-    *a::GPIOC_PDDR!() = 0x20; // pin 5 on port c
+    *firmware::GPIOC_PDDR!() = 0x20; // pin 5 on port c
 
     rust_loop();
 }
@@ -99,10 +97,10 @@ pub unsafe extern "C" fn startup() {
 
 fn rust_loop() {
     loop {
-        a::led_on();
-        a::delay(1000);
-        a::led_off();
-        a::delay(1000);
+        firmware::led_on();
+        firmware::delay(1000);
+        firmware::led_off();
+        firmware::delay(1000);
     }
 }
 

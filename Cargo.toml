@@ -1,5 +1,5 @@
 [package]
-name = "awesomefireduck-dactyl-firmware"
+name = "dactyl-firmware"
 version = "0.1.0"
 build = "build.rs"
 
