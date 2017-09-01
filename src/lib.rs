@@ -38,7 +38,7 @@ pub fn delay(ms: i32) {
 }
 
 
-pub enum Key {
+enum Key {
     Char(char),
     CapsLock,
     Esc,
@@ -52,12 +52,12 @@ pub enum Key {
     Layer(u32),
 }
 
-pub enum Side {
+enum Side {
     Left,
     Right
 }
 
-pub enum Modifier {
+enum Modifier {
     Alt(Side),
     Altgr(Side),
     Shift(Side),
@@ -67,7 +67,7 @@ pub enum Modifier {
     Hyper(Side),
 }
 
-pub struct KeyCombo {
+struct KeyCombo {
     key: Key,
     modifiers: Vec<Modifier>,/* one of: shift ctrl alt altgr super meta hyper*/
 }
@@ -77,13 +77,14 @@ pub struct KeyCombo {
 /// and 256 keys tall
 /// grid_id is the id of the grid the key is in,
 /// e.g. 0 for alphanum, 1 for numpad
-pub struct KeyPosition {
+struct KeyPosition {
     column: u8,
     row: u8,
     grid_id: u8,
 }
 
-pub fn find_keys() -> Option<Vec<KeyPosition>> {
+// side effect: reads from external hardware
+fn find_keys() -> Option<Vec<KeyPosition>> {
     let keys : Vec<KeyPosition> = Vec::new();
     loop {
         // loop over grids
@@ -94,29 +95,45 @@ pub fn find_keys() -> Option<Vec<KeyPosition>> {
     None
 }
 
-pub fn handle_keypress(keys: Vec<KeyCombo>) -> KeyCombo {
-    // get position(s) in grid that are passed
-    // map each postition to a keypress
-    // return KeyCombo
+fn handle_keypresses(keys: Vec<KeyCombo>) -> Option<KeyCombo> {
     unimplemented!();
+    // send pressed keys to hos
 }
 
 fn detect_keypress() -> Option<Vec<KeyCombo>> {
-    let keys : Vec<KeyCombo>;
     if let Some(keypositions) = find_keys() {
-        keypositions.iter().map(|&pos| map_position_to_key(pos)).collect()
+        Some(map_positions_to_keys(keypositions))
     } else {
         None
     }
 }
+
+fn execute_internal_command(command: KeyCombo) {
+    unimplemented!();
+}
+
+/// start the firmware
+///
+/// does not return (designated by "!" )
+/// Example
+///     use dactyl_firmware as firmware;
+///
+///     firmware::run();
 pub fn run() -> ! {
     loop {
         if let Some(keycombo) = detect_keypress() {
-            handle_keypress(keycombo);
+            if let Some(internal_command) = handle_keypresses(keycombo) {
+                execute_internal_command(internal_command);
+            }
         }
     }
 }
 
+fn map_positions_to_keys(positions: Vec<KeyPosition>) -> Vec<KeyCombo> /*Option?*/ {
+    unimplemented!();
+    // TODO: use keymap (e.g. US-intl or dvorak) to map positions to pressed keys (e.g. a or C-c)
+    // NOTE: but that might be done by the OS?
+}
 
 #[cfg(test)]
 mod tests {
@@ -125,6 +142,14 @@ mod tests {
     }
 }
 
-/// the dactyl has four grids of keys
-/// on each side the dactyl has one grid for the alphanumerics
-/// and one grid for the thumb keys.
+// the dactyl has four grids of keys
+// on each side the dactyl has one grid for the alphanumerics
+// and one grid for the thumb keys.
+//
+// TODO:
+// - replace vec with nostd compatible vec (on stack)
+//
+// Idea:
+// handle state like react+redux
+// TODO
+// - check if redux lib exists and is nostd compatible
