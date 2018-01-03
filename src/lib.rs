@@ -1,6 +1,5 @@
-#![feature(asm,core_intrinsics)]
+#![feature(asm, core_intrinsics)]
 extern crate core;
-use core::intrinsics::volatile_store;
 
 #[macro_export]
 macro_rules! GPIOC_PDOR   {() => (0x400FF080 as *mut u32);} // GPIOC_PDOR - page 1334,1335
@@ -17,29 +16,31 @@ macro_rules! GPIOC_PDDR   {() => (0x400FF094 as *mut u32);} // GPIOC_PDDR - page
 #[macro_export]
 macro_rules! GPIOC_PDOR   {() => (0x400FF080 as *mut u32);} // GPIOC_PDOR - page 1334,1335
 
-pub fn led_on() {
-    unsafe {
-        volatile_store(GPIOC_PDOR!(), 0x20);
-    }
+macro_rules! magic {() => (unimplemented!())}
+
+macro_rules! UnimplementedType {
+    () => { UnimplementedType::None };
 }
 
-pub fn led_off() {
-    unsafe {
-        volatile_store(GPIOC_PDOR!(), 0x0);
-    }
+pub mod ledcontrol;
+pub mod timecontrol;
+mod settings;
+#[cfg(lighting)]
+mod lighting;
+mod internal_command;
+use internal_command::InternalCommand;
+mod devices;
+
+type List<T> = Vec<T>;
+
+// for all types thet I still have to think about
+enum UnimplementedType {
+    None,
 }
 
-pub fn delay(ms: i32) {
-    for _ in 0..ms * 250 {
-        unsafe {
-            asm!("NOP");
-        }
-    }
-}
-
-
+// don't I just send keycodes to the PC?
 enum Key {
-    Char(char),
+    Char(u32),
     CapsLock,
     Esc,
     Tab,
@@ -54,8 +55,10 @@ enum Key {
 
 enum Side {
     Left,
-    Right
+    Right,
 }
+
+struct KeyCode(u32);
 
 enum Modifier {
     Alt(Side),
@@ -67,9 +70,16 @@ enum Modifier {
     Hyper(Side),
 }
 
+enum KeySequence {
+    KeyPresses(KeyCombo),
+    Internal(InternalCommand),
+    Nothing,
+}
+
 struct KeyCombo {
-    key: Key,
-    modifiers: Vec<Modifier>,/* one of: shift ctrl alt altgr super meta hyper*/
+    key: List<Key>,
+    /// one of: shift ctrl alt altgr super meta hyper
+    modifiers: List<Modifier>,
 }
 
 /// Designates the position in the keygrid.
@@ -83,63 +93,58 @@ struct KeyPosition {
     grid_id: u8,
 }
 
-// side effect: reads from external hardware
-fn find_keys() -> Option<Vec<KeyPosition>> {
-    let keys : Vec<KeyPosition> = Vec::new();
-    loop {
-        // loop over grids
-        // loop over keys in a grid like this
-        // https://en.wikipedia.org/wiki/Computer_keyboard#/media/File:FunctionalCircuitDiagramOfKeyboardNumPadScanningProcedure-small.gif
-        break;
-    }
-    None
-}
-
-fn handle_keypresses(keys: Vec<KeyCombo>) -> Option<KeyCombo> {
+/// Handle the keypress and send it to the receiving device
+/// side effect: send out stuff to device
+fn handle_keypresses(keys: KeyCombo, ref settings: &settings::Settings) {
     unimplemented!();
-    // send pressed keys to hos
+    // send pressed keys to host
 }
 
-fn detect_keypress() -> Option<Vec<KeyCombo>> {
-    if let Some(keypositions) = find_keys() {
-        Some(map_positions_to_keys(keypositions))
-    } else {
-        None
-    }
+/// Somehow detect keypresses from the key matrix
+fn detect_keypress() -> KeySequence {
+    magic!();
 }
 
-fn execute_internal_command(command: KeyCombo) {
+fn execute_internal_command(command: InternalCommand, ref mut settings: &mut settings::Settings) {
     unimplemented!();
 }
 
-/// start the firmware
+/// Start the firmware
 ///
-/// does not return (designated by "!" )
+/// Does not return (designated by "!" )
+///
 /// Example
 ///     use dactyl_firmware as firmware;
 ///
 ///     firmware::run();
 pub fn run() -> ! {
+    // first we initialise some variables
+    let mut settings: settings::Settings = settings::load_settings();
+
+    // if something changes (e.g. device connected),
+    // change settings.device to None so it re-checks
+    if let None = settings.devices {
+        settings.devices = devices::detect()
+    }
+
     loop {
-        if let Some(keycombo) = detect_keypress() {
-            if let Some(internal_command) = handle_keypresses(keycombo) {
-                execute_internal_command(internal_command);
-            }
-        }
+        use KeySequence::*;
+        match detect_keypress() {
+            Internal(command) => execute_internal_command(command, &mut settings),
+            KeyPresses(keycombo) => handle_keypresses(keycombo, &settings),
+            Nothing => {}
+        };
     }
 }
 
-fn map_positions_to_keys(positions: Vec<KeyPosition>) -> Vec<KeyCombo> /*Option?*/ {
+fn map_positions_to_keys(positions: List<KeyPosition>) -> List<KeyCombo> {
     unimplemented!();
-    // TODO: use keymap (e.g. US-intl or dvorak) to map positions to pressed keys (e.g. a or C-c)
-    // NOTE: but that might be done by the OS?
 }
 
 #[cfg(test)]
 mod tests {
     #[test]
-    fn it_works() {
-    }
+    fn it_works() {}
 }
 
 // the dactyl has four grids of keys
